@@ -1,15 +1,15 @@
-Local_Search. Load filenames to a local database for an easy search. This program is made with my Swedish Compiler. That is focusing on a simple Gui and support many different databases (PostgreSQL,SqLite, Odbc). It’s working under Linux (Wine).
+Local_Search. Load filenames to a local database for an easy search. This program is made with my Swedish Compiler. That is focusing on a simple Gui and support many different databases (PostgreSQL, SqLite, Odbc). It’s working under Linux (Wine).
 
 
-[![image]([https://github.com/RedBow-tie/local_search/blob/main/layout.png)]
+![](https://github.com/RedBow-tie/local_search/blob/main/layout.png)
 
-##Known problem
+## Known problem
 
 SqlExperss is not supported as the lack of the LIMIT keyword. 
 With MariaDb (for now only Odbc connection) there is a problem with the IN keyword. I haven’t tested MySql. 
 No support for Wide character.
 
-##About the Compiler
+## About the Compiler
 
 Sorry there is no Compiler manual, but there is a simple help program. I have many test program that's will be published in another project. 
 
@@ -34,7 +34,7 @@ form start ()
 field
 e:  "Name"
 e: E1 EDIT, display ( sql.cust_no )
-f: "Address"
+f: "Name"
 f: E2 EDIT, display ( sql.name )
 g: "City"
 
@@ -58,7 +58,7 @@ b: FORW BT "Forw"
     end
 end
 ```
-#The output
+### The output
 
-[![image]([https://github.com/RedBow-tie/local_search/blob/main/demo.png)]
+![](https://github.com/RedBow-tie/local_search/blob/main/demo.png)
 
