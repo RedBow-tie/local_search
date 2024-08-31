@@ -3,6 +3,11 @@ Local_Search. Load filenames to a local database for an easy search. This progra
 
 ![](https://github.com/RedBow-tie/local_search/blob/main/layout.png)
 
+## sqlite
+
+For higher performens I disable this database file safety. So if the load of filenames will
+crash/hang the database will be corrupt, delete the database and start over.
+
 ## Known problem
 
 SqlExperss is not supported as the lack of the LIMIT keyword. 
