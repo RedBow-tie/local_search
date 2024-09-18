@@ -1,22 +1,31 @@
-Local_Search. Load filenames to a local database for an easy search. This program is made with my Swedish Compiler. That is focusing on a simple Gui and support many different databases (PostgreSQL, SqLite, Odbc). It’s working under Linux (Wine).
+Local_Search. Load filenames to a local database for an easy search. This program is made with my Swedish Compiler. That is focusing on a simple Gui and support many different databases (PostgreSQL, MariaDB, SqLite, Odbc). It’s working under Linux (Wine).
 
 
 ![](https://github.com/RedBow-tie/local_search/blob/main/layout.png)
+
+
+## News
+
+The latest version is now supporting MariaDB. The interface file is dynamical loaded.
+Set SWE_MARIA/SWE64_MARIA to the name so can the DLL be loaded direct from the splash
+screen and the version is showed.
+
 
 ## sqlite
 
 For higher performens I disable this database file safety. So if the load of filenames will
 crash/hang the database will be corrupt, delete the database and start over.
 
+
 ## Known problem
 
-SqlExperss is not supported as the lack of the LIMIT keyword. 
-With MariaDb (for now only Odbc connection) there is a problem with the IN keyword. I haven’t tested MySql. 
-No support for Wide character.
+SqlExperss is not supported as the lack of the LIMIT keyword (I don't think there is a bulk load function, so it will be slow). 
+Limited support for Wide character.
+
 
 ## About the Compiler
 
-Sorry there is no Compiler manual, but there is a simple help program. I have many test program that's will be published in another project. 
+Sorry there is no Compiler manual, but there is a simple help program. I have many test program that's is published in another project. 
 
 Are You curious about the syntax ?
 Perhaps this little program can make Yours interest:
@@ -63,6 +72,7 @@ b: FORW BT "Forw"
     end
 end
 ```
+
 ### The output
 
 ![](https://github.com/RedBow-tie/local_search/blob/main/demo.png)
