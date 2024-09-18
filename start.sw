@@ -83,7 +83,12 @@ text Ext
 text Ext2
 text Se, Folder
 
-func start ()
+func main ()
+
+    if ( init_maria ( "libmariadb.dll" ) )
+        info ( "Can't load MariaDB/MySQL dll file" )
+    end
+
     local_file ()
 end
 
@@ -92,6 +97,7 @@ menu m1
     menu_item ( M_EXT, "Recreate ext table" )
     menu_item ( M_CRE, "Read filenames" )
     menu_item ( M_DEL, "Clear table", m_separator )
+    menu_item ( M_DROP, "Drop tables" )
     menu_item ( M_LOGIN, "Login", m_separator )
     menu_item ( M_SQL, "SQL", m_separator )
     menu_item ( M_EXIT, "Exit", m_last | m_separator )
@@ -114,11 +120,10 @@ menu List_menu
 end
 
 form local_file ()
-    layout   sysmenu resize y2 + 14
+    layout   sysmenu minibox resize y2 + 14
 
- e                                                                                   
- a                                                                                           e
-                                                            
+ e                                                                                          e                                                                                           
+ a                                                           
 
 
 
@@ -134,7 +139,7 @@ form local_file ()
 
                
                                                                                             a 
- t  tp         pt  tq       qt   te                          eb      bb    bb     bx xt      t
+ t  tp         pt  tq       qt   te                          eb      bb    bb     bx xt     t
     end 
     pre
         .menu ( m1 )
@@ -155,6 +160,7 @@ form local_file ()
         .title ( "Local files (" + db.DBTYPES () + ")" )
 
         switch ( db.dbtype () )
+            case MARIA_DB
             case ODBC_DB
             case SQLITE_DB
                 sql.exec ( "select hd,folder,file,type,date,size from disk_files  limit 1" )
@@ -175,6 +181,14 @@ form local_file ()
             "File:  *filename* \nFolder:  /*folder*\nFolder+File:  /*folder*|*file*"
     
 field
+    //Stop debug window for overlapping
+    ON_ACTIVE
+        .topwin ()
+    end
+    ON_DEACTIVE
+        .bottomwin ()
+    end
+
 on_timer ( int i )
     onerror 
         sql.abort ()
@@ -209,6 +223,7 @@ M_DEBUG
     select
         if ( .checked ( M_DEBUG ) )
             .check ( M_DEBUG, 0 )
+            _debug_win ( 0 )
         else 
             .check ( M_DEBUG, 1 )
         end
@@ -292,6 +307,18 @@ M_DEL
             disp ( 2 )
         end
     end
+M_DROP
+    select
+        if ( ask ( "Remove file tables ?" ) )
+            .WAITCURSOR ( 1 )
+            if ( db.dbtype () == POSTGRESQL_DB )
+                sql.exec_noerr ( "abort" )
+            end
+            sql.exec ( "drop table if exists disk_files, ext, disk_settings" )
+            db.disconnect () 
+            .pre ()
+        end
+    end
 M_SQL
     select
         x_sql()
@@ -319,7 +346,7 @@ M_CRE
 
         .timer ( 1, 1 )
     end
-e: E1 EDIT multi y2 + 10 y1 - 10, a_right
+e: E1 RICHEDIT multi y2 + 10 y1 - 10, a_right
 a: L1 LC singel , a_right a_bottom
     select_item ( int i )
         if ( i != -1 )
@@ -392,7 +419,10 @@ q: C2 CB, a_ymove
     end
 t: T3 ltext "Search", a_ymove
 e: SE EDIT, a_ymove a_right
-b: BT "Search", a_move
+    KEY_RETURN
+        .click ( B_SEARCH )
+    end
+b: B_SEARCH BT "Search", a_move
     select
         Page = 1
         .value ( C2, "1" )
@@ -427,6 +457,8 @@ func disp ( int new )
                 disp_old ( new )
             end
             break
+        
+        case MARIA_DB
         case ODBC_DB
             disp_maria ( new )
             break
@@ -652,7 +684,7 @@ func disp_old ( int new )
 
     local_file.value ( C2, Page - 1 )
     z = (Page - 1) * Page_s
-    ++ z
+    //++ z
 
     local_file.WAITCURSOR ( 1 )
     if ( Ext == "" && trim ( local_file.SE ) == "" )    
@@ -729,7 +761,7 @@ func disp_lite ( int new )
 
     local_file.value ( C2, Page - 1 )
     z = (Page - 1) * Page_s
-    ++ z
+    //++ z
 
     if ( Page_s == 0 )
         z = 0
@@ -791,7 +823,7 @@ func disp_maria ( int new )
 
     local_file.value ( C2, Page - 1 )
     z = (Page - 1) * Page_s
-    ++ z
+    //++ z
 
     if ( Page_s == 0 )
         z = 0

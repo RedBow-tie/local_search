@@ -15,6 +15,8 @@ query sql
 
 extern func cre_ext ()
 extern int Ver
+int Speed, Disp_speed
+
 
 int Trans_len = 20000
 int Trans_c
@@ -43,6 +45,12 @@ lfunc file1 ( long j, char search 300, int id, char _file 300, int flag, long _s
         return ( j )
     end
 
+    ++ Speed 
+    if ( Disp_speed )
+        file_index.value ( V_SPEED, itoa ( Speed / 10 ) ) 
+        Speed = Disp_speed = false
+    end
+
     search1 = right ( search, 2 )
     search1 = left ( search1, len ( search1 ) - 1 )
     search = left ( search, len ( search ) - 1 )
@@ -57,6 +65,7 @@ lfunc file1 ( long j, char search 300, int id, char _file 300, int flag, long _s
                 case POSTGRESQL_DB
                     db.COPYIN ( "[#h]|[#search1]|[#_file]|<DIR>|[date1]|[#i]\n" )
                     break
+                case MARIA_DB
                 case SQLITE_DB
                     db.exec_prep ( h, search1, _file, "<DIR>", date1, i )
 
@@ -92,6 +101,7 @@ lfunc file1 ( long j, char search 300, int id, char _file 300, int flag, long _s
             case POSTGRESQL_DB
                 db.COPYIN ( "[#h]|[#search1]|[#_file]|[#c]|[date1]|[#_size]\n" )
                 break
+            case MARIA_DB
             case SQLITE_DB
                 db.exec_prep ( h, search1, _file, c, date1, _size )
 
@@ -202,6 +212,11 @@ func search ()
                     db.prepare ( "insert into disk_files values(?,?,?,?,?,?)" )
                     break
 
+                case MARIA_DB
+                    sql.begin ()
+                    db.prepare ( "insert into disk_files values(?,?,?,?,?,?)" )
+                    break
+
                 default
                     sql.begin ()
                     break
@@ -221,6 +236,10 @@ func search ()
                 default
                     sql.commit ()
                     break
+                case MARIA_DB
+                    sql.commit ()
+                    db.prep_end ()
+                    break
                 case SQLITE_DB
                     sql.commit ()
                     db.prep_end ()
@@ -234,7 +253,7 @@ func search ()
         end
         ++ i
     wend
-
+    file_index.timer ( 1, 0 )
     file_index.clear ( T2 ) 
     file_index.value ( B1, "Start" )       //when stop
     file_index.value ( P1, 0 )
@@ -242,16 +261,17 @@ end
 
 form file_index ()
     layout "Create file index"  sysmenu
-
  t                                 t
- a                         b      b
-                           b      b
-                           c      c 
+ a                         b       b
+                           b       b
+                           c       c 
 
-                           d      d
-                         a 
+                           d       d
+                           d       d
+                         a d       d
  p                                 p
- x                                 x      
+ x                                 
+                                   x      
     end
     pre
         if ( ! db.connected () )
@@ -260,32 +280,38 @@ form file_index ()
                 .close ( 0 )
             end
         end
-
+        //~ .right ( V_SPEED, TRUE )
         .EXSTYLE ( L1, LVS_EX_CHECKBOXES | LVS_EX_GRIDLINES )      //checkboxes
         .label ( L1, "Drive|" ) 
         .COLUMNWIDTH ( L1, "50|400" )
-        .additemy ( L1, GETDRIVES () )
+        .additemy_clr ( L1, GETDRIVES () )
         .click ( CLR )
     end
     tooltip
         CLR, "Delete's all file-names in the database for the selected drive"
     
 field
+    on_timer ( int t )
+        Disp_speed = TRUE
+    end
     on_close 
         if ( .B1 != "Start" )
             message ( "Program is running!" )
             return 0
         end
+        .timer ( 1, 0 )
     end
 
-t: LTEXT "Load database with file-names"
+t: LTEXT "Load database with file-names" 
 a: L1 LC sort  
 
 b: B1 BT "Start"
     select
         if ( .B1 == "Start" )
+            .timer ( 1, 10000 )
             P = process ( search )
         else
+            .timer ( 1, 0 )
             .value ( B1, "Wait" )
             terminate ( P )
             .value ( B1, "Start" )
@@ -301,6 +327,10 @@ b: B1 BT "Start"
                     db.prep_end ()
                     sql.exec ( "PRAGMA synchronous=normal" )
                     sql.exec ( "PRAGMA journal_mode=DELETE" )
+                    break
+                case MARIA_DB
+                    sql.abort ()
+                    db.prep_end ()
                     break
             end
 
@@ -320,6 +350,8 @@ b: B2 BT "Subfolder"
 
     end
 c: CLR TB "Delete first"
+d: ltext "Files/Sec"
+d: V_SPEED ltext ""
 x: T2 LTEXT ""
 p: P1 PROGRESS
 end

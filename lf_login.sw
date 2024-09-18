@@ -1,4 +1,5 @@
 
+
 #USE_ACUTE // ´ is used insted of esaping a " (\")
 
 /*
@@ -11,6 +12,75 @@
 */
 
 
+mtext ConMaria_str
+user = root
+password = 
+database = mysql
+host = localhost 
+default-character-set = cp1252
+port = 
+socket = 
+compress = 
+pipe = 
+timeout = 
+init-command = 
+debug = 
+return-found-rows = 
+ssl-key = 
+ssl-cert = 
+ssl-ca = 
+ssl-capath = 
+ssl-crl = 
+ssl-crlpath = 
+ssl-verify-server-cert = 
+character-sets-dir = 
+interactive-timeout = 
+connect-timeout = 
+local-infile = 
+disable-local-infile =
+ssl-cipher = 
+max-allowed-packet = 
+net-buffer-length = 
+protocol = 
+shared-memory-base-name = 
+multi-results = 
+multi-statements = 
+multi-queries = 
+secure-auth = 
+report-data-truncation = 
+reconnect = 
+plugin-dir = 
+default-auth = 
+ssl-fp = 
+ssl-fp-list = 
+ssl-fplist = 
+ssl-passphrase = 
+tls-version = 
+server-public-key = 
+bind-address = 
+restricted-auth = 
+connection = 
+  /* Aliases */
+db = 
+unix_socket = 
+servername = 
+passwd = 
+tls-fp = 
+tls-fplist = 
+tls-key = 
+tls-cert = 
+tls-ca = 
+tls-capath = 
+tls-crl = 
+tls-crlpath = 
+tls-cipher = 
+tls-passphrase = 
+tls-enforce =
+tls-verify-peer =
+ssl-enforce = false
+end
+
+
 extern int Ver
 query sql
 int i
@@ -20,9 +90,11 @@ func login ()
 
     REG_SECTION ( "SOFTWARE\\swec\\apps" )
 
+//~ trace_db (1 )
+
     switch ( reg_int ( "auto" ) )
         case 1
-            if ( POSTGRESQL_DB )        //Don't try to login if you choose a other program
+            if ( USEPOSTGRESQL_DB )        //Don't try to login if you choose a other program
                 log_in = "host=" + reg_str ( "server" )
                 log_in += " port=" + reg_str ( "server_port" )
                 log_in += " dbname=" + reg_str ( "database" )
@@ -42,7 +114,7 @@ func login ()
             end
             break
         case 2
-            if ( POSTGRESQL_DB )
+            if ( USEPOSTGRESQL_DB )
                 log_in = "host=" + reg_str ( "server1" )
                 log_in += " port=" + reg_str ( "server_port1" )
                 log_in += " dbname=" + reg_str ( "database1" )
@@ -61,8 +133,8 @@ func login ()
                 end
             end
             break
-        case 3  //SQLite
-            if ( SQLITE_DB )
+        case 3 
+            if ( USESQLITE_DB )
                 i = db.sqlite ( reg_str ( "con_sqlite" ) ) 
                 if ( ! i )
                     if ( check_not_del () == 0 )
@@ -71,8 +143,8 @@ func login ()
                 end
             end
             break
-        case 4  //odbc
-            if ( ODBC_DB )
+        case 4 
+            if ( USEODBC_DB )
                 i = db.odbc (  reg_str ( "con_odbc" ) ) 
 
                 if ( ! i )
@@ -82,6 +154,30 @@ func login ()
                         if ( check_not_del () == 0 )
                             return 0
                         end
+                    end
+                end
+            end
+            break
+        case 5   //enh conn
+            if ( USEMARIA_DB  && _MODMARIA_DLL )
+                i = db.mariadb ( reg_str ( "con_maria" ) )
+                if ( ! i )
+                    if ( check_not_del () == 0 )
+                        sql.exec ( "set sql_mode='ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'" )
+                        return 0
+                    end
+                end
+            end
+            break
+        case 6
+            if ( USEMARIA_DB )
+                i = db.mariadb ( reg_str ( "maria_server" ), reg_str ( "maria_login" ), \
+                reg_str ( "maria_pwd" ), reg_str ( "maria_database" ), \
+                atoi ( reg_str ( "maria_server_port" ) ), reg_str ( "maria_socket" ), atoi ( reg_str ( "maria_flags" ) ) ) 
+                if ( ! i )
+                    if ( check_not_del () == 0 )
+                        sql.exec ( "set sql_mode='ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'" )
+                        return 0
                     end
                 end
             end
@@ -380,6 +476,147 @@ c: AL BT "Login"
     end
 end
 
+form mariadb (), nowait
+    layout "" child NOCAPTION exstyle=1
+
+ a     ab                        b  c       c
+ a     ab   b
+ a     ab                        b
+ a     ab                        b
+ a     ab                        b
+ a     ab                        b
+ a     ab           b
+
+        d           d 
+    end
+    pre 
+        if ( reg_str ( "maria_server" ) == "" )
+            .value ( E1, "localhost" )
+            .value ( E2, "3306" )
+            .value ( E3, "root" )
+            .value ( E5, "mysql" )
+            .value ( E6, "0x0" )
+        else
+            .display ()        
+        end
+    end
+field
+2       //ESC 
+    select    
+    end
+a: "Server"
+b: E1 EDIT, display ( reg_str ( "maria_server" ) )
+a: "Port"
+b: E2 EDIT num, display ( reg_str ( "maria_server_port" ) )
+a: "Database"
+b: E5 EDIT, display ( reg_str ( "maria_database" ) )
+a: "Login"
+b: E3 EDIT, display ( reg_str ( "maria_login" ) )
+a: "Password"
+b: E4 EDIT 
+a: "unix_socket"
+b: E7 EDIT
+a: "Flags"
+b: E6 EDIT 
+
+d: TCON TB "Auto connect", display ( reg_int ( "auto" ) == 6 )
+c: AL BT "Login"
+    select
+        i = db.mariadb ( .E1, .E3, .E4, .E5, atoi ( .E2 ), .E7, atoi ( .E6 ) ) 
+        if ( i )
+            warning ( sql.error () )        
+        else
+
+            reg_str ( "maria_server", .E1 )
+
+            reg_str ( "maria_server_port", .E2 )
+            reg_str ( "maria_database", .E5 ) 
+            reg_str ( "maria_login", .E3 )
+            reg_str ( "maria_socket", .E7 )
+            reg_int ( "auto", (.checked ( TCON ) ? 6 : 0) )
+            reg_str ( "maria_flags", .E6 ) 
+
+            if ( .checked ( TCON ) )
+                reg_str ( "maria_pwd", .E4 )
+            else 
+                reg_str ( "maria_pwd", "" )
+            end
+            i = sql.exec_noerr ( "select hd from disk_files limit 1" )
+            if ( i )
+                if ( ask ( "Table ´disk_files´ is missing. Create ?" ) == IDYES )
+                    if ( ask ( "Table ´disk_files´ is missing. Create ?" ) == IDYES )
+                        cre_old ()                                
+                    else 
+                        return 0
+                    end
+                else
+                    return 0
+                end
+            end
+            /*
+                Remove STRICT_TRANS_TABLES as I have "wrong" filenames
+            */
+            sql.exec ( "set sql_mode='ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'" )
+            login1.close ( 0 )
+        end
+    end
+end
+
+form mariadb_enh (), nowait
+    layout "" child NOCAPTION exstyle=1
+ a                                         b      b 
+
+
+
+
+
+
+
+ 
+                                         a
+ d         d
+end
+pre
+    if ( reg_str ( "con_maria" ) == "" )
+        .value ( W_CON, ConMaria_str )
+    else
+        .value ( W_CON, reg_str ( "con_maria" ) )
+    end
+    .check ( TCON, reg_int ( "auto" ) == 5 )
+end
+field
+2       //ESC 
+    select     
+    end
+
+a: W_CON re
+d: TCON TB "Auto connect"
+
+b: bt "Connect"
+    select
+        i = db.mariadb ( .W_CON ) 
+        if ( i )
+            warning ( sql.error () )        
+        else
+            reg_str ( "con_maria", .W_CON )
+            reg_int ( "auto", (.checked ( TCON ) ? 5 : 0 ) )
+            i = sql.exec_noerr ( "select * from disk_files limit 1" )
+            if ( i )
+                if ( ask ( "Table ´disk_files´ is missing. Create ?" ) == IDYES )
+                    cre_old ()                                
+                else 
+                    return 0
+                end
+            end
+            /*
+                Remove STRICT_TRANS_TABLES as I have "wrong" filenames
+            */
+            sql.exec ( "set sql_mode='ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'" )
+            login1.close ( 0 )
+        end
+    end
+end
+
 form login1 ()
     layout "Login" sysmenu
 
@@ -409,6 +646,12 @@ pre
     end
     if ( USESQLITE_DB )
         .addpage ( W_TAB, i ++, "Sqlite", sqlite )
+    end
+    if ( USEMARIA_DB  && _MODMARIA_DLL )
+        .addpage ( W_TAB, i ++, "MariaDb enh", mariadb_enh )
+    end
+    if ( USEMARIA_DB )
+        .addpage ( W_TAB, i ++, "MariaDb", mariadb )
     end
     if ( USEODBC_DB )
         .addpage ( W_TAB, i ++, "Odbc", odbc )
@@ -466,15 +709,25 @@ end
 
 
 func cre_old ()
-    char x 100
+    char x 20
+    char x1 20
 
-    onerror sql.abort ()    
+    onerror 
+        if ( sql.exec_noerr ( "abort" ) )
+            sql.abort ( "transaction" )
+        end
+    end
 
-    sql.begin ( "transaction" )
-    if ( db.dbtype () == ODBC_DB )
-        x = ""
-    else
-        x = "without time zone"
+    if ( sql.exec_noerr ( "begin" ) )
+        sql.begin ( "transaction" )
+    end
+    switch ( db.dbtype () )
+        case ODBC_DB 
+        case MARIA_DB
+            x = ""
+            break
+        default
+            x = "without time zone"
     end
 
 
@@ -482,14 +735,19 @@ func cre_old ()
         "hd character(2) NOT NULL," \
         "folder text NOT NULL," \
         "file text NOT NULL," \
-        "type text NOT NULL," \
-        "date timestamp [!x]," \
-        "size bigint)" )
+        "type text NOT NULL," /*        "date timestamp [!x],"  */ \
+        "date text," \
+          "size bigint)" )
 
-    if ( db.dbtype () == ODBC_DB )
-        x = "(100)"
-    else
-        x = ""
+    switch ( db.dbtype () )
+        case ODBC_DB 
+        case MARIA_DB
+            x = "(100)"
+            x1 = "(30)"
+            break
+        default
+            x = ""
+            x1 = ""
     end
 
     sql.exec ( "CREATE TABLE ext ( ext text [!x] )" )
@@ -501,7 +759,7 @@ func cre_old ()
     sql.exec ( "CREATE INDEX disk_folder ON disk_files (folder [!x], file [!x])" )
     sql.exec ( "CREATE INDEX disk_file ON disk_files (file [!x])" )
     sql.exec ( "CREATE INDEX disk_type_file ON disk_files (type [!x], file [!x])" )
-    sql.exec ( "CREATE INDEX disk_date ON disk_files (date, file [!x],folder [!x] )" )
+    sql.exec ( "CREATE INDEX disk_date ON disk_files (date [!x1], file [!x],folder [!x] )" )
     sql.exec ( "CREATE INDEX disk_size_file ON disk_files (size, file [!x], folder [!x])" )
 
     sql.commit ()
